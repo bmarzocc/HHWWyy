@@ -15,7 +15,7 @@ def computeMt(part1_px, part1_py, part1_mass, part2_px, part2_py, part2_mass):
   Mt = math.sqrt(m1*m1 + m2*m2 + 2*(Et1*Et2 - pt2));
   return Mt;
 
-def selectJets(jet0, jet1, jet2, jet3, jet4):
+def selectJets(jet0, jet0_pt, jet1, jet1_pt, jet2, jet2_pt, jet3, jet3_pt, jet4, jet4_pt):
 
   m01 = 999.
   m02 = 999.
@@ -28,16 +28,16 @@ def selectJets(jet0, jet1, jet2, jet3, jet4):
   m24 = 999.
   m34 = 999.
 
-  if jet0.Pt()>=0. and jet1.Pt()>=0.: m01 = abs((jet0+jet1).M()-80.379)
-  if jet0.Pt()>=0. and jet2.Pt()>=0.: m02 = abs((jet0+jet2).M()-80.379) 
-  if jet0.Pt()>=0. and jet3.Pt()>=0.: m03 = abs((jet0+jet3).M()-80.379)
-  if jet0.Pt()>=0. and jet4.Pt()>=0.: m04 = abs((jet0+jet4).M()-80.379)
-  if jet1.Pt()>=0. and jet2.Pt()>=0.: m12 = abs((jet1+jet2).M()-80.379)
-  if jet1.Pt()>=0. and jet3.Pt()>=0.: m13 = abs((jet1+jet3).M()-80.379) 
-  if jet1.Pt()>=0. and jet4.Pt()>=0.: m14 = abs((jet1+jet4).M()-80.379) 
-  if jet2.Pt()>=0. and jet3.Pt()>=0.: m23 = abs((jet2+jet3).M()-80.379) 
-  if jet2.Pt()>=0. and jet4.Pt()>=0.: m24 = abs((jet2+jet4).M()-80.379) 
-  if jet3.Pt()>=0. and jet4.Pt()>=0.: m24 = abs((jet3+jet4).M()-80.379) 
+  if jet0_pt>=0. and jet1_pt>=0.: m01 = abs((jet0+jet1).M()-80.379)
+  if jet0_pt>=0. and jet2_pt>=0.: m02 = abs((jet0+jet2).M()-80.379) 
+  if jet0_pt>=0. and jet3_pt>=0.: m03 = abs((jet0+jet3).M()-80.379)
+  if jet0_pt>=0. and jet4_pt>=0.: m04 = abs((jet0+jet4).M()-80.379)
+  if jet1_pt>=0. and jet2_pt>=0.: m12 = abs((jet1+jet2).M()-80.379)
+  if jet1_pt>=0. and jet3_pt>=0.: m13 = abs((jet1+jet3).M()-80.379) 
+  if jet1_pt>=0. and jet4_pt>=0.: m14 = abs((jet1+jet4).M()-80.379) 
+  if jet2_pt>=0. and jet3_pt>=0.: m23 = abs((jet2+jet3).M()-80.379) 
+  if jet2_pt>=0. and jet4_pt>=0.: m24 = abs((jet2+jet4).M()-80.379) 
+  if jet3_pt>=0. and jet4_pt>=0.: m24 = abs((jet3+jet4).M()-80.379) 
 
   diff = [m01, m02, m03, m04, m12, m13, m14, m23, m24, m34]   
   index = diff.index(min(diff))
@@ -53,8 +53,12 @@ def selectJets(jet0, jet1, jet2, jet3, jet4):
   elif index == 7: return [2,3]
   elif index == 8: return [2,4]
   elif index == 9: return [3,4]
+  
+def addVariables(inTree, name, eftWeight):
 
-def addVariables(inTree, name):
+  inTree.SetBranchStatus('kinWeight',0)
+  inTree.SetBranchStatus('weight_NLO_node',0)
+  #inTree.SetBranchStatus('weight_NLO_SM',0)
   inTree.SetBranchStatus('METCor_pt',0)
   inTree.SetBranchStatus('METCor_eta',0)
   inTree.SetBranchStatus('METCor_phi',0)
@@ -83,6 +87,9 @@ def addVariables(inTree, name):
   inTree.SetBranchStatus('Wmass_H',0)
   inTree.SetBranchStatus('Wmass_goodJets12',0)
   
+  kinWeight = array('f', [0])
+  weight_NLO_node = array('f', [0])
+  #weight_NLO_SM = array('f', [0])
   METCor_pt = array('f', [0])
   METCor_eta = array('f', [0])
   METCor_phi = array('f', [0])
@@ -111,6 +118,9 @@ def addVariables(inTree, name):
   Wmass_H = array('f', [0])
   Wmass_goodJets12 = array('f', [0])
 
+  kinWeight[0] = 1.
+  weight_NLO_node[0] = 1. 
+  #weight_NLO_SM[0] = 1.
   goodLepton_pt[0] = -99.
   goodLepton_eta[0] = -99.
   goodLepton_phi[0] = -99.
@@ -131,10 +141,13 @@ def addVariables(inTree, name):
   Wmt_goodJets12[0] = -99.
   Wmass_H[0] = -99.
   Wmass_goodJets12[0] = -99.
-
+  
   outTree = inTree.CloneTree(0)
   outTree.SetName(name)
   outTree.SetTitle(name)  
+  _kinWeight = outTree.Branch('kinWeight', kinWeight, 'kinWeight/F')  
+  _weight_NLO_node = outTree.Branch('weight_NLO_node', weight_NLO_node, 'weight_NLO_node/F')   
+  #_weight_NLO_SM = outTree.Branch('weight_NLO_SM', weight_NLO_SM, 'weight_NLO_SM/F')  
   _METCor_pt = outTree.Branch('METCor_pt', METCor_pt, 'METCor_pt/F')   
   _METCor_eta = outTree.Branch('METCor_eta', METCor_eta, 'METCor_eta/F')   
   _METCor_phi = outTree.Branch('METCor_phi', METCor_phi, 'METCor_phi/F')   
@@ -170,7 +183,26 @@ def addVariables(inTree, name):
    
     if i%10000==0: print "Entry:",i
     #if i>10000: continue 
-  
+   
+    eftWeight_val = 1.
+    if eftWeight=="weight_NLO_1": eftWeight_val = inTree.weight_NLO_1
+    elif eftWeight=="weight_NLO_2": eftWeight_val = inTree.weight_NLO_2
+    elif eftWeight=="weight_NLO_3": eftWeight_val = inTree.weight_NLO_3
+    elif eftWeight=="weight_NLO_4": eftWeight_val = inTree.weight_NLO_4
+    elif eftWeight=="weight_NLO_5": eftWeight_val = inTree.weight_NLO_5
+    elif eftWeight=="weight_NLO_6": eftWeight_val = inTree.weight_NLO_6
+    elif eftWeight=="weight_NLO_7": eftWeight_val = inTree.weight_NLO_7
+    elif eftWeight=="weight_NLO_8": eftWeight_val = inTree.weight_NLO_8
+    elif eftWeight=="weight_NLO_9": eftWeight_val = inTree.weight_NLO_9
+    elif eftWeight=="weight_NLO_10": eftWeight_val = inTree.weight_NLO_10
+    elif eftWeight=="weight_NLO_11": eftWeight_val = inTree.weight_NLO_11
+    elif eftWeight=="weight_NLO_12": eftWeight_val = inTree.weight_NLO_12
+    elif eftWeight=="weight_NLO_SM": eftWeight_val = inTree.weight_NLO_SM
+
+    kinWeight[0] = 1.
+    weight_NLO_node[0] = eftWeight_val
+    #weight_NLO_SM[0] = 1.
+    
     met = correctedMET(inTree.MET_pt, inTree.MET_phi, inTree.nvtx, inTree.run, False, 2017)   
     METCor_pt[0] = met[2]
     METCor_eta[0] = 0.
@@ -179,6 +211,8 @@ def addVariables(inTree, name):
     METCor_px[0] = met[0]
     METCor_py[0] = met[1]
     METCor_pz[0] = 0.
+    
+    Wmt_L[0] = -99.
 
     if inTree.goodMuons_0_pt>inTree.goodElectrons_0_pt and inTree.goodMuons_0_pt>=0.: 
       goodLepton_pt[0] = inTree.goodMuons_0_pt
@@ -221,14 +255,18 @@ def addVariables(inTree, name):
     jet3.SetPtEtaPhiE(inTree.goodJets_3_pt, inTree.goodJets_3_eta, inTree.goodJets_3_phi, inTree.goodJets_3_E)
     jet4.SetPtEtaPhiE(inTree.goodJets_4_pt, inTree.goodJets_4_eta, inTree.goodJets_4_phi, inTree.goodJets_4_E)
 
-    if jet0.Pt()<0. or jet1.Pt()<0.:
+    if inTree.goodJets_0_pt<0. or inTree.goodJets_1_pt<0.:
       Wmt_goodJets12[0] = -99.
       Wmass_goodJets12[0] = -99.
     else: 
       Wmt_goodJets12[0] = computeMt(jet0.Px(), jet0.Py(), jet0.M(), jet1.Px(), jet1.Py(), jet1.M())
       Wmass_goodJets12[0] = (jet0+jet1).M() 
-
-    WJets_indices = selectJets(jet0, jet1, jet2, jet3, jet4)
+      if (jet0+jet1).M()<-99.: 
+        print "Wmass_goodJets12[0]:",(jet0+jet1).M()  
+        print "jet0:",inTree.goodJets_0_pt, inTree.goodJets_0_eta, inTree.goodJets_0_phi, inTree.goodJets_0_E
+        print "jet1:",inTree.goodJets_1_pt, inTree.goodJets_1_eta, inTree.goodJets_1_phi, inTree.goodJets_1_E    
+          
+    WJets_indices = selectJets(jet0, inTree.goodJets_0_pt, jet1, inTree.goodJets_1_pt, jet2, inTree.goodJets_3_pt, jet3, inTree.goodJets_3_pt, jet4, inTree.goodJets_4_pt)
     if WJets_indices[0]==-1 or WJets_indices[1]==-1: 
       WJet1_pt[0] = -99.
       WJet1_eta[0] = -99.
@@ -350,7 +388,7 @@ def addVariables(inTree, name):
       WJet2_E[0] = jet4.Energy()
       Wmt_H[0] = computeMt(jet3.Px(), jet3.Py(), jet3.M(), jet4.Px(), jet4.Py(), jet4.M())
       Wmass_H[0] = (jet3+jet4).M()   
-
+   
     outTree.Fill() 
   outTree.Write()
 
@@ -359,10 +397,12 @@ if __name__ == '__main__':
  ROOT.gROOT.SetBatch(ROOT.kTRUE)
 
  parser =  argparse.ArgumentParser(description='addVariables')
- parser.add_argument('-i', '--inList', dest='inList', required=True, type=str)
+ parser.add_argument('-i', '--inList',     dest='inList',     required=True, type=str)
+ parser.add_argument('-w', '--nodeWeight', dest='nodeWeight', required=True, type=str)
  
  args = parser.parse_args()
  inList = args.inList
+ nodeWeight = args.nodeWeight
  
  with open(str(inList)) as f_List:
    data_List = f_List.read()
@@ -376,11 +416,12 @@ if __name__ == '__main__':
    inFile = ROOT.TFile(line,"READ")
    for key in inFile.GetListOfKeys():
       kname = key.GetName()  
-      #if kname=='GluGluToHHTo2G2Qlnu_node_cHHH1_13TeV_HHWWggTag_0_v1': 
+      #if kname!='GluGluToHHTo2G2Qlnu_node_10_13TeV_HHWWggTag_0_v1':
+      #  continue  
       print "Tree:",kname 
       inTree = inFile.Get(str(kname))
       outFile.cd()
-      addVariables(inTree,kname)
+      addVariables(inTree,kname,nodeWeight)
    outFile.Close()
         
         

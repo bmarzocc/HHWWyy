@@ -14,6 +14,7 @@ if __name__ == '__main__':
  #dir = ""
  #if args.dir!="": dir = args.dir
  #dir = ""
+ dir = ""
 
  output_name = args.input
  output_nameEven = output_name.replace('.root','_even.root')
@@ -51,6 +52,7 @@ if __name__ == '__main__':
    outfile_odd.Close()
  else:
    for key in inFile.GetListOfKeys():
+    #if key.GetName()!="GluGluToHHTo2G2Qlnu_node_10_13TeV_HHWWggTag_0_v1": continue
     print "Even events:",key.GetName()
     tree = inFile.Get(key.GetName())
     outfile_even.cd()
@@ -62,6 +64,7 @@ if __name__ == '__main__':
     outtree_even.Write(key.GetName())
    outfile_even.Close()
    for key in inFile.GetListOfKeys():
+    #if key.GetName()!="GluGluToHHTo2G2Qlnu_node_10_13TeV_HHWWggTag_0_v1": continue
     print "Odd events:",key.GetName()
     tree = inFile.Get(key.GetName())
     outfile_odd.cd()
